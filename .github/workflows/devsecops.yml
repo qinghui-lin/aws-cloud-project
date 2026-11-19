@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+
 jobs:
   terraform-security-check:
     name: Terraform Validate & Checkov Security Scan
@@ -29,7 +32,7 @@ jobs:
         with:
           directory: terraform/
           framework: terraform
-          soft_fail: true
+          soft_fail: false
 
   config-and-script-scan:
     name: Ansible Lint, Trivy Scan & ShellCheck
@@ -37,6 +40,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - name: Install Ansible Collections
+        run: ansible-galaxy collection install community.general
 
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@v26
@@ -46,11 +52,12 @@ jobs:
         continue-on-error: true
 
       - name: Run Trivy Config Scan (Dockerfile)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'config'
-          scan-ref: 'ansible/'
+          scan-ref: 'app/'
           severity: 'CRITICAL,HIGH'
+          exit-code: '1'
 
       - name: Run ShellCheck on Bash Scripts
         run: shellcheck deploy.sh

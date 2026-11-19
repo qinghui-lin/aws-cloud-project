@@ -5,7 +5,7 @@
 
   tasks:
     - name: Mise à jour du cache apt et installation de Docker + UFW
-      apt:
+      ansible.builtin.apt:
         name:
           - docker.io
           - ufw
@@ -13,7 +13,7 @@
         update_cache: true
 
     - name: Démarrer et activer Docker
-      service:
+      ansible.builtin.service:
         name: docker
         state: started
         enabled: true
@@ -33,7 +33,7 @@
         policy: deny
 
     - name: Copier les fichiers de l'application sur le serveur
-      copy:
+      ansible.builtin.copy:
         src: ../app/
         dest: /opt/webapp/
 
