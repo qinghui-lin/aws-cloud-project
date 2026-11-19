@@ -36,9 +36,13 @@
       ansible.builtin.copy:
         src: ../app/
         dest: /opt/webapp/
+        mode: "0644"
+        directory_mode: "0700"
 
     - name: Construire l'image Docker sur le serveur
-      command: docker build -t pfe-webapp:latest /opt/webapp/
+      ansible.builtin.command: docker build -t pfe-webapp:latest /opt/webapp/
+      changed_when: true
 
     - name: Lancer le conteneur web
-      command: docker run -d --name webapp --restart always -p 80:80 pfe-webapp:latest
+      ansible.builtin.command: docker run -d --name webapp --restart always -p 80:80 pfe-webapp:latest
+      changed_when: true

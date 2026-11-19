@@ -42,10 +42,12 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install Ansible Collections
-        run: ansible-galaxy collection install -r ansible/requirements.yml -p ./ansible/collections
+        run: ansible-galaxy collection install -r ansible/requirements.yml -p ${{ github.workspace }}/.ansible/collections
 
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@v26
+        env:
+          ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
         with:
           working_directory: ansible
           args: "playbook.yml"
