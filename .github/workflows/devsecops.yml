@@ -31,8 +31,8 @@ jobs:
           framework: terraform
           soft_fail: true
 
-  ansible-and-container-scan:
-    name: Ansible Lint & Trivy Dockerfile Scan
+  config-and-script-scan:
+    name: Ansible Lint, Trivy Scan & ShellCheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -50,3 +50,6 @@ jobs:
           scan-type: 'config'
           scan-ref: 'ansible/'
           severity: 'CRITICAL,HIGH'
+
+      - name: Run ShellCheck on Bash Scripts
+        run: shellcheck deploy.sh
