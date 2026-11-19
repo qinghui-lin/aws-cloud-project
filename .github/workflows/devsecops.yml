@@ -41,15 +41,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Install Ansible Collections
-        run: ansible-galaxy collection install community.general
-
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@v26
         with:
           working_directory: ansible
           args: "playbook.yml"
-        continue-on-error: true
 
       - name: Run Trivy Config Scan (Dockerfile)
         uses: aquasecurity/trivy-action@v0.36.0
