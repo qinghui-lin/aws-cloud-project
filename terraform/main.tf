@@ -2,7 +2,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
     }
   }
 }
@@ -34,6 +42,10 @@ resource "aws_vpc" "main" {
   tags                 = { Name = "pfe-vpc", Project = "DevSecOps" }
 }
 
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+}
+
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 }
@@ -61,14 +73,16 @@ resource "aws_route_table_association" "public_assoc" {
 
 # Security Group (Ports 22 et 80 uniquement)
 resource "aws_security_group" "web_sg" {
-  name   = "pfe-web-sg"
-  vpc_id = aws_vpc.main.id
+  name        = "pfe-web-sg"
+  vpc_id      = aws_vpc.main.id
+  description = "Security group for DevSecOps web server allowing SSH and HTTP"
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow SSH inbound traffic for Ansible provisioning"
   }
 
   ingress {
@@ -76,6 +90,7 @@ resource "aws_security_group" "web_sg" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP inbound traffic for Nginx web server"
   }
 
   egress {
@@ -83,6 +98,7 @@ resource "aws_security_group" "web_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic for package updates and Docker pulls"
   }
 }
 
@@ -103,6 +119,16 @@ resource "aws_instance" "web" {
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
+  ebs_optimized          = true
+
+  root_block_device {
+    encrypted = true
+  }
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
 
   tags = { Name = "PFE-WebServer", Project = "DevSecOps" }
 }
