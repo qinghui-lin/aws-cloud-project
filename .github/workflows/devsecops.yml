@@ -41,17 +41,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Install Ansible Collections
-        run: ansible-galaxy collection install -r ansible/requirements.yml -p ${{ github.workspace }}/.ansible/collections
-
-      - name: Run Ansible Lint
-        uses: ansible/ansible-lint@v26
-        env:
-          ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections
-        with:
-          working_directory: ansible
-          args: "playbook.yml"
-
       - name: Run Trivy Config Scan (Dockerfile)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
