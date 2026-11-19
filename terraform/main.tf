@@ -11,10 +11,20 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-# Clé SSH importée sur AWS
+# Génération de la paire de clés
+resource "tls_private_key" "ssh_key" {
+  algorithm = "ED25519"
+}
+
 resource "aws_key_pair" "deployer" {
   key_name   = "pfe-deployer-key"
-  public_key = file("~/.ssh/aws-pfe-key.pub")
+  public_key = tls_private_key.ssh_key.public_key_openssh
+}
+
+resource "local_file" "private_key" {
+  content         = tls_private_key.ssh_key.private_key_openssh
+  filename        = "{path.module}/aws-pfe-key.pem"
+  file_permission = "0600"
 }
 
 # VPC et Réseau
