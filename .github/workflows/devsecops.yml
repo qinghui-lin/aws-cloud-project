@@ -41,6 +41,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Install Ansible Collections
+        run: ansible-galaxy collection install -r ansible/requirements.yml -p ./ansible/collections
+
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@v26
         with:
