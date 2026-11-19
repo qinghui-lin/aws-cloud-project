@@ -35,7 +35,7 @@ jobs:
           soft_fail: false
 
   config-and-script-scan:
-    name: Ansible Lint, Trivy Scan & ShellCheck
+    name: Trivy Scan & ShellCheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

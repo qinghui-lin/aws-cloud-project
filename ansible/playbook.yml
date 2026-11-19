@@ -44,5 +44,5 @@
       changed_when: true
 
     - name: Lancer le conteneur web
-      ansible.builtin.command: docker run -d --name webapp --restart always -p 80:80 pfe-webapp:latest
+      ansible.builtin.command: docker run -d --name webapp --restart always -p 80:8080 pfe-webapp:latest
       changed_when: true
