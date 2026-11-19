@@ -2,7 +2,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
     }
   }
 }
@@ -29,9 +37,14 @@ resource "local_file" "private_key" {
 
 # VPC et Réseau
 resource "aws_vpc" "main" {
+  #checkov:skip=CKV2_AWS_11:VPC Flow Logs désactivés pour éviter les coûts CloudWatch/S3 hors Free Tier
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   tags                 = { Name = "pfe-vpc", Project = "DevSecOps" }
+}
+
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
 }
 
 resource "aws_internet_gateway" "gw" {
@@ -39,6 +52,7 @@ resource "aws_internet_gateway" "gw" {
 }
 
 resource "aws_subnet" "public" {
+  #checkov:skip=CKV_AWS_130:Attribution automatique d'IP publique requise pour l'accès SSH Ansible et l'exposition web
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
@@ -61,14 +75,19 @@ resource "aws_route_table_association" "public_assoc" {
 
 # Security Group (Ports 22 et 80 uniquement)
 resource "aws_security_group" "web_sg" {
-  name   = "pfe-web-sg"
-  vpc_id = aws_vpc.main.id
+  #checkov:skip=CKV_AWS_24:Accès SSH requis depuis le runner/poste d'administration pour Ansible
+  #checkov:skip=CKV_AWS_260:Port HTTP 80 ouvert au public pour exposer l'application web Nginx
+  #checkov:skip=CKV_AWS_382:Trafic sortant requis pour les mises à jour apt et le téléchargement des images Docker
+  name        = "pfe-web-sg"
+  vpc_id      = aws_vpc.main.id
+  description = "Security group for DevSecOps web server allowing SSH and HTTP"
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow SSH inbound traffic for Ansible provisioning"
   }
 
   ingress {
@@ -76,6 +95,7 @@ resource "aws_security_group" "web_sg" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP inbound traffic for Nginx web server"
   }
 
   egress {
@@ -83,6 +103,7 @@ resource "aws_security_group" "web_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic for package updates and Docker pulls"
   }
 }
 
@@ -98,11 +119,23 @@ data "aws_ami" "ubuntu" {
 
 # Instance EC2 Free Tier
 resource "aws_instance" "web" {
+  #checkov:skip=CKV_AWS_126:Detailed monitoring désactivé pour rester dans les limites du AWS Free Tier
+  #checkov:skip=CKV2_AWS_41:Aucun rôle IAM requis car l'instance n'interagit pas avec d'autres services AWS
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
+  ebs_optimized          = true
+
+  root_block_device {
+    encrypted = true
+  }
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
 
   tags = { Name = "PFE-WebServer", Project = "DevSecOps" }
 }
