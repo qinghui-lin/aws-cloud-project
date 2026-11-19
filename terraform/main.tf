@@ -23,7 +23,7 @@ resource "aws_key_pair" "deployer" {
 
 resource "local_file" "private_key" {
   content         = tls_private_key.ssh_key.private_key_openssh
-  filename        = "{path.module}/aws-pfe-key.pem"
+  filename        = "${path.module}/aws-pfe-key.pem"
   file_permission = "0600"
 }
 
