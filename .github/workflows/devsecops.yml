@@ -1,0 +1,52 @@
+name: DevSecOps IaC & Container Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  terraform-security-check:
+    name: Terraform Validate & Checkov Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format & Validate
+        working-directory: ./terraform
+        run: |
+          terraform fmt -check -recursive || true
+          terraform init -backend=false
+          terraform validate
+
+      - name: Run Checkov IaC Security Scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform/
+          framework: terraform
+          soft_fail: true
+
+  ansible-and-container-scan:
+    name: Ansible Lint & Trivy Dockerfile Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Ansible Lint
+        uses: ansible/ansible-lint@main
+        with:
+          args: "ansible/playbook.yml"
+        continue-on-error: true
+
+      - name: Run Trivy Config Scan (Dockerfile)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: 'ansible/'
+          severity: 'CRITICAL,HIGH'

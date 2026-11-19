@@ -1,0 +1,45 @@
+---
+- name: Configuration et durcissement du serveur AWS
+  hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Mise à jour du cache apt et installation de Docker + UFW
+      apt:
+        name:
+          - docker.io
+          - ufw
+        state: present
+        update_cache: yes
+
+    - name: Démarrer et activer Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Configuration du pare-feu UFW (SSH et HTTP uniquement)
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - "22"
+        - "80"
+
+    - name: Activer UFW
+      ufw:
+        state: enabled
+        policy: deny
+
+    - name: Copier les fichiers de l'application sur le serveur
+      copy:
+        src: ../app/
+        dest: /opt/webapp/
+
+    - name: Construire l'image Docker sur le serveur
+      command: docker build -t pfe-webapp:latest /opt/webapp/
+
+    - name: Lancer le conteneur web
+      command: docker run -d --name webapp --restart always -p 80:80 pfe-webapp:latest
+      ignore_errors: yes

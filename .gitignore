@@ -1,0 +1,13 @@
+.keys/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+
+ansible/inventory.ini
+*.pem
+*.key
+*.pub
+
+README.md
