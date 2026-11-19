@@ -35,11 +35,17 @@ jobs:
           soft_fail: false
 
   config-and-script-scan:
-    name: Trivy Scan & ShellCheck
+    name: Ansible Lint, Trivy Scan & ShellCheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - name: Run Ansible Lint
+        uses: ansible/ansible-lint@v26.11.0
+        with:
+          working_directory: "ansible"
+          requirements_file: "requirements.yml"
 
       - name: Run Trivy Config Scan (Dockerfile)
         uses: aquasecurity/trivy-action@v0.36.0

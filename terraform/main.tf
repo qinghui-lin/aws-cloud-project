@@ -73,6 +73,9 @@ resource "aws_route_table_association" "public_assoc" {
 
 # Security Group (Ports 22 et 80 uniquement)
 resource "aws_security_group" "web_sg" {
+  #checkov:skip=CKV_AWS_24:Accès SSH requis depuis le runner/poste d'administration pour Ansible
+  #checkov:skip=CKV_AWS_260:Port HTTP 80 ouvert au public pour exposer l'application web Nginx
+  #checkov:skip=CKV_AWS_382:Trafic sortant requis pour les mises à jour apt et le téléchargement des images Docker
   name        = "pfe-web-sg"
   vpc_id      = aws_vpc.main.id
   description = "Security group for DevSecOps web server allowing SSH and HTTP"
@@ -114,6 +117,8 @@ data "aws_ami" "ubuntu" {
 
 # Instance EC2 Free Tier
 resource "aws_instance" "web" {
+  #checkov:skip=CKV_AWS_126:Detailed monitoring désactivé pour rester dans les limites du AWS Free Tier
+  #checkov:skip=CKV2_AWS_41:Aucun rôle IAM requis car l'instance n'interagit pas avec d'autres services AWS
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public.id
