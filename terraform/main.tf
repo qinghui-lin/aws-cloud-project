@@ -36,6 +36,7 @@ resource "local_file" "private_key" {
 }
 
 # VPC et Réseau
+#checkov:skip=CKV2_AWS_11:VPC Flow Logs désactivés pour éviter les coûts CloudWatch/S3 hors Free Tier
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -50,6 +51,7 @@ resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 }
 
+#checkov:skip=CKV_AWS_130:Attribution automatique d'IP publique requise pour l'accès SSH Ansible et l'exposition web
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
