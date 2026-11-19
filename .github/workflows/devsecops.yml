@@ -41,7 +41,8 @@ jobs:
       - name: Run Ansible Lint
         uses: ansible/ansible-lint@v26
         with:
-          args: "ansible/playbook.yml"
+          working_directory: ansible
+          args: "playbook.yml"
         continue-on-error: true
 
       - name: Run Trivy Config Scan (Dockerfile)
